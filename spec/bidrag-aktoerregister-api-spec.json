@@ -1,0 +1,225 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Bidrag Aktørregister",
+    "description": "Inneholder adresse- og kontoinformasjon om aktører i Bidrassaker.",
+    "version": "0.2"
+  },
+  "paths": {
+    "/bidrag-aktorer/hendelser": {
+      "get": {
+        "tags": [
+          "aktoerregister-controller"
+        ],
+        "summary": "Tilbyr en liste over aktøroppdateringer.",
+        "description": "Ingen informasjon om aktøren leveres av denne tjenesten utover aktørId'n. Hendelsene legges inn med stigende sekvensnummer.Klienten må selv ta vare på hvilke sekvensnummer som sist er behandlet, og be om å få hendelser fra det neste sekvensnummeret ved neste kall.Dersom det ikke returneres noen hendelser er ingen av aktørene endret siden siste kall. Samme sekvensnummer må da benyttes i neste kall.\n\nNye hendelser vil alltid ha høyere sekvensnummer enn tidligere hendelser. Det kan forekomme hull i sekvensnummer-rekken. Laveste mulig sekvensnummer er 1.Dersom det kommer en hendelse for en aktør med tidligere hendelser (lavere sekvensnummer) er det ikke garantert at de tidligere hendelsene ikke returneres.",
+        "operationId": "hentKontonummerHendelser",
+        "parameters": [
+          {
+            "name": "fraSekvensnummer",
+            "in": "query",
+            "description": "Angir første sekvensnummer som ønskes hentet. Ved første kall skal dette settes til 1. Deretter benyttes siste sekvensnummer + 1.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "antall",
+            "in": "query",
+            "description": "Maksimalt antall hendelser som ønskes hentet. Default-verdi er 10000.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Hendelse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bidrag-aktorer/aktoer/{identtype}/{ident}": {
+      "get": {
+        "tags": [
+          "aktoerregister-controller"
+        ],
+        "summary": "Hent informasjon om gitt aktør.",
+        "description": "For personer returneres kun kontonummer. For andre typer aktører leveres også navn og adresse.",
+        "operationId": "hentAktoerinformasjon",
+        "parameters": [
+          {
+            "name": "identtype",
+            "in": "path",
+            "description": "Angir hvilken type ident som er angitt i forespørselen. For personer vil dette være FNR eller DNR, som angis med PERSONNUMMER. Utover dette benyttes AKTOERNUMMER.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Angir hvilken type identitetsnummer som benyttes for å identifisere aktøren.",
+              "enum": [
+                "PERSONNUMMER",
+                "AKTOERNUMMER"
+              ]
+            }
+          },
+          {
+            "name": "ident",
+            "in": "path",
+            "description": "Identen for aktøren som skal hentes. For personer vil dette være FNR eller DNR. Ellers benyttes aktørnummer på elleve siffer hvor første siffer er 8.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aktøren ble funnet.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aktoer"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Gitt identtype eller ident er ugyldig."
+          },
+          "404": {
+            "description": "Ingen aktør med gitt identtype og ident ble funnet."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AktoerId": {
+        "type": "object",
+        "properties": {
+          "aktoerId": {
+            "type": "string"
+          },
+          "identtype": {
+            "type": "string",
+            "description": "Angir hvilken type identitetsnummer som benyttes for å identifisere aktøren.",
+            "enum": [
+              "PERSONNUMMER",
+              "AKTOERNUMMER"
+            ]
+          }
+        },
+        "description": "Aktøren som er oppdatert."
+      },
+      "Hendelse": {
+        "type": "object",
+        "properties": {
+          "sekvensnummer": {
+            "type": "integer",
+            "description": "Hendelsens sekvensnummer. Sekvensnummeret vil alltid øke i nyere hendelser.",
+            "format": "int32"
+          },
+          "aktoerId": {
+            "$ref": "#/components/schemas/AktoerId"
+          }
+        },
+        "description": "En hendelse signaliserer at enten adresse eller kontonummer for en aktør er oppdatert. Hendelsen inneholder ikke selve oppdateringen."
+      },
+      "Adresse": {
+        "type": "object",
+        "properties": {
+          "navn": {
+            "type": "string",
+            "description": "Aktørens navn"
+          },
+          "adresselinje1": {
+            "type": "string",
+            "description": "Første adresselinje inneholder normalt gatenavn, men kan også innehold f.eks c/o."
+          },
+          "adresselinje2": {
+            "type": "string",
+            "description": "Andre adresselinje brukes primært i utlandsadresser, hvor postnr og poststed ikke er tilgjengelig som strukturerte data."
+          },
+          "adresselinje3": {
+            "type": "string",
+            "description": "Tredje adresselinje brukes i noen tilfeller til region."
+          },
+          "postnr": {
+            "type": "string",
+            "description": "Postnr dersom dette er tilgjengelig som strukturerte data."
+          },
+          "poststed": {
+            "type": "string",
+            "description": "Poststed dersom dette er tilgjengelig som strukturerte data."
+          },
+          "land": {
+            "type": "string",
+            "description": "Land. TODO: Bestemme representasjon av land. 3-sifret land-kode?"
+          }
+        },
+        "description": "Representerer navn og/eller adresse for en bidragsaktør. TODO: Beskrivelse av felter må kvalitetssikres."
+      },
+      "Aktoer": {
+        "type": "object",
+        "properties": {
+          "aktoerId": {
+            "$ref": "#/components/schemas/AktoerId"
+          },
+          "adresse": {
+            "$ref": "#/components/schemas/Adresse"
+          },
+          "kontonummer": {
+            "$ref": "#/components/schemas/Kontonummer"
+          }
+        }
+      },
+      "Kontonummer": {
+        "type": "object",
+        "properties": {
+          "norskKontonr": {
+            "type": "string",
+            "description": "Norsk kontonummer, 11 siffer."
+          },
+          "iban": {
+            "type": "string",
+            "description": "IBAN angir kontonummeret på et internasjonalt format."
+          },
+          "swift": {
+            "type": "string",
+            "description": "SWIFT angir banken på et internasjonalt format."
+          },
+          "bankNavn": {
+            "type": "string",
+            "description": "Bankens navn."
+          },
+          "bankLandkode": {
+            "type": "string",
+            "description": "Bankens landkode. TODO: Bestemme representasjon av land. 3-sifret land-kode?"
+          },
+          "valutaKode": {
+            "type": "string",
+            "description": "Kontoens valuta."
+          }
+        },
+        "description": "Representerer kontonummer for en bidragsaktør. For norske kontonummer er det kun norskKontornr som er utfyllt, ellers benyttes de andre feltene for utlandske kontonummer."
+      }
+    }
+  }
+}

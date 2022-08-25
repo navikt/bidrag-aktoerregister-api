@@ -1,6 +1,6 @@
 window.onload = function() {
   window.ui = SwaggerUIBundle({
-    url: "spec/bidrag-aktoerregister-api-spec.yaml",
+    url: "spec/bidrag-aktoerregister-api-spec.json",
     dom_id: '#swagger-ui',
     deepLinking: true,
     presets: [

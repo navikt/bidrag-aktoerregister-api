@@ -1,0 +1,42 @@
+name: Oppdater API spec
+on:
+  workflow_dispatch:
+
+jobs:
+
+  update_api:
+    name: Update API spec
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out API spec
+        uses: actions/checkout@v2
+
+      - name: Create spec dir
+        run: mkdir -p spec
+
+      - name: Download the API spec json
+        run: curl https://bidrag-aktoerregister.ekstern.dev.nav.no/v3/api-docs -o spec/bidrag-aktoerregister-api-spec.json
+
+      - name: Generate YAML from JSON.
+        uses: fabasoad/yaml-json-xml-converter-action@main
+        id: json2yaml
+        with:
+          path: spec/bidrag-aktoerregister-api-spec.json
+          from: json
+          to: yaml
+
+      - name: Store json2yaml result
+        uses: "DamianReeves/write-file-action@master"
+        with:
+          path: spec/bidrag-aktoerregister-api-spec.yaml
+          write-mode: overwrite
+          contents: ${{ steps.json2yaml.outputs.data }}
+
+      - name: Upload to API repo
+        run: |
+          git config user.name Team Bidrag
+          git config user.email bidrag@nav.no
+          git add .
+          git commit -m "Oppdaterer API spec"
+          git push

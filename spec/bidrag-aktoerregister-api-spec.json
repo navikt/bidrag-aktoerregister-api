@@ -1,1 +1,303 @@
-{"openapi":"3.0.1","info":{"title":"Bidrag Aktørregister","description":"Inneholder adresse- og kontoinformasjon om aktører i Bidragssaker.","version":"1.1"},"servers":[{"url":"https://bidrag-aktoerregister-feature.dev.intern.nav.no","description":"Generated server url"}],"security":[{"Bearer Auth":[]}],"paths":{"/aktoer":{"post":{"tags":["aktoerregister-controller"],"summary":"Hent informasjon om gitt aktør.","description":"For personer returneres kun kontonummer. For andre typer aktører leveres også navn og adresse.","operationId":"hentAktoer","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AktoerIdDTO"}}},"required":true},"responses":{"200":{"description":"Aktøren ble funnet.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AktoerDTO"}}}},"400":{"description":"Gitt identtype eller ident er ugyldig."},"404":{"description":"Ingen aktør med gitt identtype og ident ble funnet."}}}},"/hendelser":{"get":{"tags":["aktoerregister-controller"],"summary":"Tilbyr en liste over aktøroppdateringer.","description":"Ingen informasjon om aktøren leveres av denne tjenesten utover aktørId'n. Hendelsene legges inn med stigende sekvensnummer.Klienten må selv ta vare på hvilke sekvensnummer som sist er behandlet, og be om å få hendelser fra det neste sekvensnummeret ved neste kall.Dersom det ikke returneres noen hendelser er ingen av aktørene endret siden siste kall. Samme sekvensnummer må da benyttes i neste kall.\n\nNye hendelser vil alltid ha høyere sekvensnummer enn tidligere hendelser. Det kan forekomme hull i sekvensnummer-rekken.Dersom det kommer en hendelse for en aktør med tidligere hendelser (lavere sekvensnummer) er det ikke garantert at de tidligere hendelsene ikke returneres.","operationId":"hentHendelser","parameters":[{"name":"fraSekvensnummer","in":"query","description":"Angir første sekvensnummer som ønskes hentet. Default-verdi er 0","required":false,"schema":{"type":"integer","format":"int32","default":0}},{"name":"antall","in":"query","description":"Maksimalt antall hendelser som ønskes hentet. Default-verdi er 1000.","required":false,"schema":{"type":"integer","format":"int32","default":1000}}],"responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/HendelseDTO"}}}}}}}}},"components":{"schemas":{"AktoerIdDTO":{"type":"object","properties":{"aktoerId":{"type":"string","description":"Identen for aktøren. For personer vil dette være FNR eller DNR. Ellers benyttes aktørnummer på elleve siffer hvor første siffer er 8 eller 9."},"identtype":{"type":"string","description":"Angir hvilken type identitetsnummer som benyttes for å identifisere aktøren.","enum":["PERSONNUMMER","AKTOERNUMMER"]}}},"AdresseDTO":{"type":"object","properties":{"navn":{"type":"string","description":"Aktørens navn"},"adresselinje1":{"type":"string","description":"Første adresselinje inneholder normalt gatenavn, men kan også innehold f.eks c/o."},"adresselinje2":{"type":"string","description":"Andre adresselinje brukes primært i utlandsadresser, hvor postnr og poststed ikke er tilgjengelig som strukturerte data."},"adresselinje3":{"type":"string","description":"Tredje adresselinje brukes i noen tilfeller til region."},"postnr":{"type":"string","description":"Postnr dersom dette er tilgjengelig som strukturerte data."},"poststed":{"type":"string","description":"Poststed dersom dette er tilgjengelig som strukturerte data."},"land":{"type":"string","description":"Land som 3-bokstavs land-kode."}},"description":"Representerer navn og/eller adresse for en bidragsaktør. TODO: Beskrivelse av felter må kvalitetssikres."},"AktoerDTO":{"type":"object","properties":{"aktoerId":{"$ref":"#/components/schemas/AktoerIdDTO"},"offentligId":{"type":"string","description":"Offentlig id for samhandlere. Angis ikke for personer."},"offentligIdType":{"type":"string","description":"Type offentlig id. F.eks ORG for norske organisasjonsnummere."},"navn":{"$ref":"#/components/schemas/NavnDTO"},"gradering":{"type":"string","description":"Gradering/Diskresjonskoder:\n\n| API-kode                 | TPS-kode | Også omtalt som |\n| FORTROLIG                | SPFO     | Kode 7          |\n| STRENGT_FORTROLIG        | SPSF     | Kode 6          |\n| STRENGT_FORTROLIG_UTLAND | SPSF     | §19             |\n","enum":["FORTROLIG","STRENGT_FORTROLIG","STRENGT_FORTROLIG_UTLAND"]},"adresse":{"$ref":"#/components/schemas/AdresseDTO"},"identer":{"type":"array","description":"Lister alle aktørens identer. Inneholder også gjeldende ident.","items":{"$ref":"#/components/schemas/AktoerIdDTO"}},"fodtDato":{"type":"string","description":"Personens fødselsdato. Settes for alle personer der fødselsdato er kjent.","format":"date"},"dodDato":{"type":"string","description":"Personens eventuelle dødsdato. Settes kun dersom personen er død og dødsdato er kjent.","format":"date"},"kontonummer":{"$ref":"#/components/schemas/KontonummerDTO"}}},"KontonummerDTO":{"type":"object","properties":{"norskKontonr":{"type":"string","description":"Norsk kontonummer, 11 siffer."},"iban":{"type":"string","description":"IBAN angir kontonummeret på et internasjonalt format."},"swift":{"type":"string","description":"SWIFT angir banken på et internasjonalt format."},"bankNavn":{"type":"string","description":"Bankens navn."},"bankLandkode":{"type":"string","description":"Bankens landkode. TODO: Bestemme representasjon av land. 3-sifret land-kode?"},"bankCode":{"type":"string","description":"BankCode. Format varierer."},"valutaKode":{"type":"string","description":"Kontoens valuta."}},"description":"Representerer kontonummer for en bidragsaktør. For norske kontonummer er det kun norskKontornr som er utfyllt, ellers benyttes de andre feltene for utlandske kontonummer."},"NavnDTO":{"type":"object","properties":{"fornavn":{"type":"string","description":"Personens fornavn og eventuelle mellomnavn. Benyttes ikke for samhandlere."},"etternavn":{"type":"string","description":"Personens etternavn eller samhandlerens fulle navn."}},"description":"Representerer navn for en bidragsaktør."},"HendelseDTO":{"type":"object","properties":{"sekvensnummer":{"type":"integer","description":"Hendelsens sekvensnummer. Sekvensnummeret vil alltid øke i nyere hendelser.","format":"int32"},"aktoerId":{"$ref":"#/components/schemas/AktoerIdDTO"}},"description":"En hendelse signaliserer at enten adresse eller kontonummer for en aktør er oppdatert. Hendelsen inneholder ikke selve oppdateringen."}},"securitySchemes":{"Bearer Auth":{"type":"http","scheme":"bearer","bearerFormat":"JWT"}}}}
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Bidrag Aktørregister",
+    "description": "Inneholder adresse- og kontoinformasjon om aktører i Bidragssaker.",
+    "version": "1.1"
+  },
+  "servers": [
+    {
+      "url": "https://bidrag-aktoerregister-feature.dev.intern.nav.no",
+      "description": "Generated server url"
+    }
+  ],
+  "security": [
+    {
+      "Bearer Auth": []
+    }
+  ],
+  "paths": {
+    "/aktoer": {
+      "post": {
+        "tags": [
+          "aktoerregister-controller"
+        ],
+        "summary": "Hent informasjon om gitt aktør.",
+        "description": "For personer returneres kun kontonummer. For andre typer aktører leveres også navn og adresse.",
+        "operationId": "hentAktoer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AktoerIdDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Aktøren ble funnet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AktoerDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Gitt identtype eller ident er ugyldig."
+          },
+          "404": {
+            "description": "Ingen aktør med gitt identtype og ident ble funnet."
+          }
+        }
+      }
+    },
+    "/hendelser": {
+      "get": {
+        "tags": [
+          "aktoerregister-controller"
+        ],
+        "summary": "Tilbyr en liste over aktøroppdateringer.",
+        "description": "Ingen informasjon om aktøren leveres av denne tjenesten utover aktørId'n. Hendelsene legges inn med stigende sekvensnummer.Klienten må selv ta vare på hvilke sekvensnummer som sist er behandlet, og be om å få hendelser fra det neste sekvensnummeret ved neste kall.Dersom det ikke returneres noen hendelser er ingen av aktørene endret siden siste kall. Samme sekvensnummer må da benyttes i neste kall.\n\nNye hendelser vil alltid ha høyere sekvensnummer enn tidligere hendelser. Det kan forekomme hull i sekvensnummer-rekken.Dersom det kommer en hendelse for en aktør med tidligere hendelser (lavere sekvensnummer) er det ikke garantert at de tidligere hendelsene ikke returneres.",
+        "operationId": "hentHendelser",
+        "parameters": [
+          {
+            "name": "fraSekvensnummer",
+            "in": "query",
+            "description": "Angir første sekvensnummer som ønskes hentet. Default-verdi er 0",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "antall",
+            "in": "query",
+            "description": "Maksimalt antall hendelser som ønskes hentet. Default-verdi er 1000.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HendelseDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AktoerIdDTO": {
+        "type": "object",
+        "properties": {
+          "aktoerId": {
+            "type": "string",
+            "description": "Identen for aktøren. For personer vil dette være FNR eller DNR. Ellers benyttes aktørnummer på elleve siffer hvor første siffer er 8 eller 9."
+          },
+          "identtype": {
+            "type": "string",
+            "description": "Angir hvilken type identitetsnummer som benyttes for å identifisere aktøren.",
+            "enum": [
+              "PERSONNUMMER",
+              "AKTOERNUMMER"
+            ]
+          }
+        }
+      },
+      "AdresseDTO": {
+        "type": "object",
+        "properties": {
+          "adresselinje1": {
+            "type": "string",
+            "description": "Første adresselinje inneholder normalt gatenavn, men kan også innehold f.eks c/o."
+          },
+          "adresselinje2": {
+            "type": "string",
+            "description": "Andre adresselinje brukes primært i utlandsadresser, hvor postnr og poststed ikke er tilgjengelig som strukturerte data."
+          },
+          "adresselinje3": {
+            "type": "string",
+            "description": "Tredje adresselinje brukes i noen tilfeller til region."
+          },
+          "leilighetsnummer": {
+            "type": "string",
+            "description": "Leilighetsnummer dersom dette er tilgjengelig som strukturerte data."
+          },
+          "postnr": {
+            "type": "string",
+            "description": "Postnr dersom dette er tilgjengelig som strukturerte data."
+          },
+          "poststed": {
+            "type": "string",
+            "description": "Poststed dersom dette er tilgjengelig som strukturerte data."
+          },
+          "land": {
+            "type": "string",
+            "description": "Land som 3-bokstavs land-kode."
+          }
+        },
+        "description": "Representerer navn og/eller adresse for en bidragsaktør. TODO: Beskrivelse av felter må kvalitetssikres."
+      },
+      "AktoerDTO": {
+        "type": "object",
+        "properties": {
+          "aktoerId": {
+            "$ref": "#/components/schemas/AktoerIdDTO"
+          },
+          "offentligId": {
+            "type": "string",
+            "description": "Offentlig id for samhandlere. Angis ikke for personer."
+          },
+          "offentligIdType": {
+            "type": "string",
+            "description": "Type offentlig id. F.eks ORG for norske organisasjonsnummere."
+          },
+          "navn": {
+            "$ref": "#/components/schemas/NavnDTO"
+          },
+          "gradering": {
+            "type": "string",
+            "description": "Gradering/Diskresjonskoder:\n\n| API-kode                 | TPS-kode | Også omtalt som |\n| FORTROLIG                | SPFO     | Kode 7          |\n| STRENGT_FORTROLIG        | SPSF     | Kode 6          |\n| STRENGT_FORTROLIG_UTLAND | SPSF     | §19             |\n",
+            "enum": [
+              "FORTROLIG",
+              "STRENGT_FORTROLIG",
+              "STRENGT_FORTROLIG_UTLAND"
+            ]
+          },
+          "adresse": {
+            "$ref": "#/components/schemas/AdresseDTO"
+          },
+          "sprakkode": {
+            "type": "string",
+            "description": "Språkkoden for aktøren."
+          },
+          "identer": {
+            "type": "array",
+            "description": "Lister alle aktørens identer. Inneholder også gjeldende ident.",
+            "items": {
+              "$ref": "#/components/schemas/AktoerIdDTO"
+            }
+          },
+          "fodtDato": {
+            "type": "string",
+            "description": "Personens fødselsdato. Settes for alle personer der fødselsdato er kjent.",
+            "format": "date"
+          },
+          "dodDato": {
+            "type": "string",
+            "description": "Personens eventuelle dødsdato. Settes kun dersom personen er død og dødsdato er kjent.",
+            "format": "date"
+          },
+          "dodsbo": {
+            "$ref": "#/components/schemas/DodsboDTO"
+          },
+          "kontonummer": {
+            "$ref": "#/components/schemas/KontonummerDTO"
+          }
+        }
+      },
+      "KontonummerDTO": {
+        "type": "object",
+        "properties": {
+          "norskKontonr": {
+            "type": "string",
+            "description": "Norsk kontonummer, 11 siffer."
+          },
+          "iban": {
+            "type": "string",
+            "description": "IBAN angir kontonummeret på et internasjonalt format."
+          },
+          "swift": {
+            "type": "string",
+            "description": "SWIFT angir banken på et internasjonalt format."
+          },
+          "bankNavn": {
+            "type": "string",
+            "description": "Bankens navn."
+          },
+          "bankLandkode": {
+            "type": "string",
+            "description": "Bankens landkode. TODO: Bestemme representasjon av land. 3-sifret land-kode?"
+          },
+          "bankCode": {
+            "type": "string",
+            "description": "BankCode. Format varierer."
+          },
+          "valutaKode": {
+            "type": "string",
+            "description": "Kontoens valuta."
+          }
+        },
+        "description": "Representerer kontonummer for en bidragsaktør. For norske kontonummer er det kun norskKontornr som er utfyllt, ellers benyttes de andre feltene for utlandske kontonummer."
+      },
+      "NavnDTO": {
+        "type": "object",
+        "properties": {
+          "fornavn": {
+            "type": "string",
+            "description": "Personens fornavn og eventuelle mellomnavn. Benyttes ikke for samhandlere."
+          },
+          "etternavn": {
+            "type": "string",
+            "description": "Personens etternavn eller samhandlerens fulle navn."
+          }
+        },
+        "description": "Representerer navn for en bidragsaktør."
+      },
+      "HendelseDTO": {
+        "type": "object",
+        "properties": {
+          "sekvensnummer": {
+            "type": "integer",
+            "description": "Hendelsens sekvensnummer. Sekvensnummeret vil alltid øke i nyere hendelser.",
+            "format": "int32"
+          },
+          "aktoerId": {
+            "$ref": "#/components/schemas/AktoerIdDTO"
+          }
+        },
+        "description": "En hendelse signaliserer at enten adresse eller kontonummer for en aktør er oppdatert. Hendelsen inneholder ikke selve oppdateringen."
+      },
+      "DodsboDTO": {
+        "type": "object",
+        "properties": {
+          "kontaktperson": {
+            "type": "string",
+            "description": "Navn på kontaktperson for dødsboet."
+          },
+          "adresse": {
+            "type": "string",
+            "description": "Adresse til kontaktperson fro dødsboet."
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Bearer Auth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

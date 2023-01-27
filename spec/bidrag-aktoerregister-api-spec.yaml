@@ -92,9 +92,6 @@ components:
     AdresseDTO:
       type: object
       properties:
-        navn:
-          type: string
-          description: Aktørens navn
         adresselinje1:
           type: string
           description: "Første adresselinje inneholder normalt gatenavn, men kan også\
@@ -106,6 +103,9 @@ components:
         adresselinje3:
           type: string
           description: Tredje adresselinje brukes i noen tilfeller til region.
+        leilighetsnummer:
+          type: string
+          description: Leilighetsnummer dersom dette er tilgjengelig som strukturerte data.
         postnr:
           type: string
           description: Postnr dersom dette er tilgjengelig som strukturerte data.
@@ -145,6 +145,9 @@ components:
           - STRENGT_FORTROLIG_UTLAND
         adresse:
           $ref: '#/components/schemas/AdresseDTO'
+        sprakkode:
+          type: string
+          description: Språkkoden for aktøren.
         identer:
           type: array
           description: Lister alle aktørens identer. Inneholder også gjeldende ident.
@@ -160,6 +163,8 @@ components:
           description: Personens eventuelle dødsdato. Settes kun dersom personen er
             død og dødsdato er kjent.
           format: date
+        dodsbo:
+          $ref: '#/components/schemas/DodsboDTO'
         kontonummer:
           $ref: '#/components/schemas/KontonummerDTO'
     KontonummerDTO:
@@ -213,6 +218,15 @@ components:
           $ref: '#/components/schemas/AktoerIdDTO'
       description: En hendelse signaliserer at enten adresse eller kontonummer for
         en aktør er oppdatert. Hendelsen inneholder ikke selve oppdateringen.
+    DodsboDTO:
+      type: object
+      properties:
+        kontaktperson:
+          type: string
+          description: Navn på kontaktperson for dødsboet.
+        adresse:
+          type: string
+          description: Adresse til kontaktperson fro dødsboet.
   securitySchemes:
     Bearer Auth:
       type: http

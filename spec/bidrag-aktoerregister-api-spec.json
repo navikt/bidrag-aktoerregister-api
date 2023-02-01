@@ -286,8 +286,7 @@
             "description": "Navn på kontaktperson for dødsboet."
           },
           "adresse": {
-            "type": "string",
-            "description": "Adresse til kontaktperson fro dødsboet."
+            "$ref": "#/components/schemas/AdresseDTO"
           }
         }
       }

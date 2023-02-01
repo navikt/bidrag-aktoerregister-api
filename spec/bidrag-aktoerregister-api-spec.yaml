@@ -72,6 +72,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/HendelseDTO'
+  /avmelding:
+    post:
+      tags:
+        - aktoerregister-controller
+      summary: Avmelder gitt aktør.
+      description: Avmelder gitt aktør.
+      operationId: avmeldAktoer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AktoerIdDTO'
+        required: true
+      responses:
+        "200":
+          description: Aktøren ble avmeldt.
+        "400":
+          description: Gitt identtype eller ident er ugyldig.
 components:
   schemas:
     AktoerIdDTO:
